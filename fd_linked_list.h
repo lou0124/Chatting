@@ -7,5 +7,5 @@ typedef struct Fd {
     struct Fd *next;
 }Fd;
 
-void add(Fd *head, int fd);
-int delete(Fd *head, int fd);
+void fd_add(Fd *head, int fd);
+int fd_delete(Fd *head, int fd);

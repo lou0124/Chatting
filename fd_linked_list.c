@@ -1,6 +1,6 @@
 #include "fd_linked_list.h"
 
-void add(Fd *head, int fd) 
+void fd_add(Fd *head, int fd) 
 {
     Fd *temp;
     Fd *new_fd;
@@ -20,7 +20,7 @@ void add(Fd *head, int fd)
     temp->next = new_fd;
 }
 
-int delete(Fd *head, int fd)
+int fd_delete(Fd *head, int fd)
 {
     Fd *temp = head;
     Fd *pre = temp;
