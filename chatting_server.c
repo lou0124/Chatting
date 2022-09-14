@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
+#include "fd_linked_list.h"
 
 #define BUF_SIZE 100
 #define EPOLL_SIZE 50
@@ -18,10 +19,10 @@ int main(int argc, char *argv[])
     socklen_t addr_sz;
     int str_len, i;
     char buf[BUF_SIZE];
-
     struct epoll_event *ep_events;
     struct epoll_event event;
     int epfd, event_cnt;
+    Fd_header *header;
 
     if(argc != 2){
         printf("Usage : %s <port>\n", argv[0]);
@@ -46,6 +47,9 @@ int main(int argc, char *argv[])
     event.data.fd = serv_sock;
     epoll_ctl(epfd, EPOLL_CTL_ADD, serv_sock, &event);
 
+    header = (Fd_header *)malloc(sizeof(Fd_header));
+    header->link = NULL;
+
     while(1)
     {
         event_cnt = epoll_wait(epfd, ep_events, EPOLL_SIZE, -1);
@@ -64,7 +68,9 @@ int main(int argc, char *argv[])
                 event.events = EPOLLIN;
                 event.data.fd = clnt_sock;
                 epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
-                printf("connected client: %d \n", clnt_sock);               
+                fd_add(header, clnt_sock);
+                fd_test(header); // test
+                printf("connected client: %d \n", clnt_sock); 
             }
             else
             {
@@ -73,11 +79,14 @@ int main(int argc, char *argv[])
                 {
                     epoll_ctl(epfd, EPOLL_CTL_DEL, ep_events[i].data.fd, NULL);
                     close(ep_events[i].data.fd);
+                    fd_delete(header, ep_events[i].data.fd);
+                    fd_test(header); // test
                     printf("closed client: %d \n", ep_events[i].data.fd);
                 }
                 else
                 {
-                    write(ep_events[i].data.fd, buf, str_len);
+                    //write(ep_events[i].data.fd, buf, str_len);
+                    write_fds(header, buf, str_len);
                 }
             }
         }       
