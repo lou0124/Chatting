@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    //write(ep_events[i].data.fd, buf, str_len);
                     write_fds(header, buf, str_len);
                 }
             }
