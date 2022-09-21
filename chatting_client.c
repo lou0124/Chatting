@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     else
         puts("Connected..........");
 
-    fputs("닉네임을 입력하세요.(영문 20자 이내) : ", stdout);
+    fputs("Please enter your name(20 characters or less) : ", stdout);
     fgets(name, NAME_SIZE, stdin);
     name[strlen(name)-1] = '\0';
 

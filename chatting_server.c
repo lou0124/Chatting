@@ -10,15 +10,15 @@
 #define BUF_SIZE 100
 #define EPOLL_SIZE 50
 
+void connect_client(int serv_sock, int epfd, Fd_header *header);
+void excute_message(int clnt_sock, int epfd, Fd_header *header);
 void error_handling(char *buf);
 
 int main(int argc, char *argv[])
 {
-    int serv_sock, clnt_sock;
-    struct sockaddr_in serv_adr, clnt_adr;
-    socklen_t addr_sz;
-    int str_len, i;
-    char buf[BUF_SIZE];
+    int serv_sock;
+    struct sockaddr_in serv_adr;
+    int i;
     struct epoll_event *ep_events;
     struct epoll_event event;
     int epfd, event_cnt;
@@ -62,38 +62,48 @@ int main(int argc, char *argv[])
         for (i=0; i<event_cnt; i++)
         {
             if (ep_events[i].data.fd == serv_sock)
-            {
-                addr_sz = sizeof(clnt_adr);
-                clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_adr, &addr_sz);
-                event.events = EPOLLIN;
-                event.data.fd = clnt_sock;
-                epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
-                fd_add(header, clnt_sock);
-                fd_test(header); // test
-                printf("connected client: %d \n", clnt_sock); 
-            }
+                connect_client(serv_sock, epfd, header);
             else
-            {
-                str_len = read(ep_events[i].data.fd, buf, BUF_SIZE);
-                if (str_len == 0)
-                {
-                    epoll_ctl(epfd, EPOLL_CTL_DEL, ep_events[i].data.fd, NULL);
-                    close(ep_events[i].data.fd);
-                    fd_delete(header, ep_events[i].data.fd);
-                    fd_test(header); // test
-                    printf("closed client: %d \n", ep_events[i].data.fd);
-                }
-                else
-                {
-                    write_fds(header, buf, str_len);
-                }
-            }
+                excute_message(ep_events[i].data.fd, epfd, header);
         }       
     }
 
     close(serv_sock);
     close(epfd);
     return 0;
+}
+
+void connect_client(int serv_sock, int epfd, Fd_header *header)
+{
+    socklen_t addr_sz;
+    struct sockaddr_in clnt_adr;
+    int clnt_sock;
+    struct epoll_event event;
+
+    addr_sz = sizeof(clnt_adr);
+    clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_adr, &addr_sz);
+    event.events = EPOLLIN;
+    event.data.fd = clnt_sock;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
+    fd_add(header, clnt_sock);
+    printf("connected client: %d \n", clnt_sock); 
+}
+
+void excute_message(int clnt_sock, int epfd, Fd_header *header) 
+{
+    int str_len;
+    char buf[BUF_SIZE];
+
+    str_len = read(clnt_sock, buf, BUF_SIZE);
+    if (str_len == 0)
+    {
+        epoll_ctl(epfd, EPOLL_CTL_DEL, clnt_sock, NULL);
+        close(clnt_sock);
+        fd_delete(header, clnt_sock);
+        printf("closed client: %d \n", clnt_sock);
+    }
+    else
+        write_fds(header, buf, str_len);
 }
 
 void error_handling(char *buf)
